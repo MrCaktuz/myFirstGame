@@ -186,7 +186,7 @@
             var timeSpent = game.time.currentColor - game.time.start;
             switch (sPatternValue) {
                 case "one":
-                    if ( timeSpent < nTimeLapsColor / 2 ) {
+                    if ( timeSpent > nTimeLapsColor / 2 ) {
                         // console.log("One White");
                         game.app.buttonOne.draw( "#FFF" );
                     } else {
