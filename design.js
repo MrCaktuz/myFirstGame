@@ -1,84 +1,309 @@
+/* My first game
+ *
+ * /sim.js - sim main class
+ *
+ * coded by Mucht
+ */
+
 ( function() {
+
     "use strict";
 
-    var oApp,
-    _isCanvasSupported;
+    var Simon;
 
-    _isCanvasSupported = function( $canvasElt ) {
-        return !!$canvasElt.getContext;
-    };
+    // Game Manager
 
-    oApp = {
-        "canvas": null,
-        "context": null,
-        "width": null,
-        "height": null
-    };
+    Simon = function( oApp ) {
+        var game = this,
+            timeOut,
+            timeStep = 0,
+            gameStarted = true,
+            aPattern = [ "one", "three", "two", "four", "one" ],
+            nTimeLapsArrayPattern = 500,
+            nTimeLapsColor = 50,
+            sPatternValue,
+            aMyPattern = [];
 
-    oApp.setup = function() {
+        this.app = oApp;
 
-        this.canvas = document.querySelector( "#game" ); // on récupère la balise canvas dans la propriété de l'objet.
-        if ( !_isCanvasSupported( this.canvas ) ) {
-            return console.error( "Canvas isn't supported!" );
+        this.time = {
+            "start": null,
+            "currentColor": null,
+            "current": null
+        };
+
+        this.app.getClickPosition = function() {
+            console.log("Grrr, you click me baby ! ;-)");
+            game.app.canvas.addEventListener( "click", game.app.registerMyPattern.bind( this ) );
+        };
+
+        this.app.registerMyPattern = function( oEvent ) {
+            this.clickPosition = {
+                "x": oEvent.offsetX,
+                "y": oEvent.offsetY
+            };
+            // console.log(this.clickPosition);
+
+            if ( this.clickPosition.x > 50 && this.clickPosition.x < 225 && this.clickPosition.y > 50 && this.clickPosition.y < 225 ) {
+                aMyPattern.push( "yellow" );
+                // console.log("yellow click !");
+
+            } else if ( this.clickPosition.x > 275 && this.clickPosition.x < 450 && this.clickPosition.y > 50 && this.clickPosition.y < 225 ) {
+                aMyPattern.push( "blue" );
+                // console.log("blue click !");
+
+            } else if ( this.clickPosition.x > 50 && this.clickPosition.x < 225 && this.clickPosition.y > 275 && this.clickPosition.y < 450 ) {
+                aMyPattern.push( "red" );
+                // console.log("red click !");
+
+            } else {
+                aMyPattern.push( "green" );
+                // console.log("green click !");
+            }
+            // console.log(aMyPattern);
+
+        };
+
+        // Draw background function
+        this.app.bcg = {
+            "draw": function() {
+                var oContext = oApp.context;
+
+                oContext.fillStyle = "#CECECE";
+                oContext.fillRect( 0, 0, game.app.width, game.app.height );
+            }
+        };
+
+        // Draw square one function
+        this.app.buttonOne = {
+            "draw": function( strokeColor ) {
+                var oContext = oApp.context;
+
+                oContext.fillStyle = "yellow";
+                oContext.strokeStyle = strokeColor;
+                oContext.lineWidth = "10";
+
+                oContext.beginPath();
+                oContext.moveTo( 225, 50 );
+                oContext.lineTo( 225, 225 );
+                oContext.lineTo( 50, 225 );
+                oContext.arc( 225, 225, 175, Math.PI, Math.PI / -2 + 0.028 );
+
+                oContext.fill();
+                oContext.stroke();
+            }
+        };
+
+        // Draw square two function
+        this.app.buttonTwo = {
+            "draw": function( strokeColor ) {
+                var oContext = oApp.context;
+
+                oContext.fillStyle = "blue";
+                oContext.strokeStyle = strokeColor;
+                oContext.lineWidth = "10";
+
+                oContext.beginPath();
+                oContext.moveTo( 275, 50 );
+                oContext.lineTo( 275, 225 );
+                oContext.lineTo( 450, 225 );
+                oContext.arc( 275, 225, 175, 0, Math.PI / -2 - 0.028, true );
+
+                oContext.fill();
+                oContext.stroke();
+            }
+        };
+
+        // Draw square Three function
+        this.app.buttonThree = {
+            "draw": function( strokeColor ) {
+                var oContext = oApp.context;
+
+                oContext.fillStyle = "green";
+                oContext.strokeStyle = strokeColor;
+                oContext.lineWidth = "10";
+
+                oContext.beginPath();
+                oContext.moveTo( 275, 450 );
+                oContext.lineTo( 275, 275 );
+                oContext.lineTo( 450, 275 );
+                oContext.arc( 275, 275, 175, 2 * Math.PI, 3 * Math.PI / -2 + 0.028 );
+
+                oContext.fill();
+                oContext.stroke();
+            }
+        };
+
+        // Draw square four function
+        this.app.buttonFour = {
+            "draw": function( strokeColor ) {
+                var oContext = oApp.context;
+
+                oContext.fillStyle = "red";
+                oContext.strokeStyle = strokeColor;
+                oContext.lineWidth = "10";
+
+                oContext.beginPath();
+                oContext.moveTo( 225, 450 );
+                oContext.lineTo( 225, 275 );
+                oContext.lineTo( 50, 275 );
+                oContext.arc( 225, 275, 175,  Math.PI, 2 * Math.PI + Math.PI / 2 - 0.028, true );
+
+                oContext.fill();
+                oContext.stroke();
+            }
+        };
+
+        this.app.buttons = [ this.app.buttonOne, this.app.buttonTwo, this.app.buttonThree, this.app.buttonFour ];
+
+        // Setup a random pattern (see below)
+        /*this.pattern = {
+            "add": function() {
+                var randomNbr = Math.random();
+
+                if ( randomNbr < 0.25 ) {
+                    return aPattern.push("one");
+                } else if ( randomNbr > 0.25 && randomNbr < 0.5 ) {
+                    return aPattern.push("two");
+                } else if ( randomNbr > 0.5 && randomNbr < 0.75 ) {
+                    return aPattern.push("three");
+                } else {
+                    return aPattern.push("four");
+                }
+            }
+        };*/
+
+        // Setup a random pattern
+        this.pattern = {
+            "add": function() {
+                // Random pick a integer between 1 and 4
+                var randomNbr = Math.floor((Math.random() * 4) + 1);
+                aPattern.push( aPattern[randomNbr-1] );
+            }
+        };
+
+        // setup the game (draw all)
+        this.gameSetup = function() {
+            // draw: background
+            game.app.bcg.draw();
+            // draw button one
+            game.app.buttonOne.draw( "#000" );
+            // draw button two
+            game.app.buttonTwo.draw( "#000" );
+            // draw button three
+            game.app.buttonThree.draw( "#000" );
+            // draw button four
+            game.app.buttonFour.draw( "#000" );
+
         }
-        this.context = this.canvas.getContext( "2d" );
 
-        this.width = this.canvas.width;
-        this.height = this.canvas.height;
+        // Setup the pattern display
+        this.patternDisplay = function() {
 
-        oApp.draw();
-    };
+            game.time.currentColor = Date.now();
 
-    oApp.drawBackground = function() {
-        var oContext = this.context;
+            // Evite un calcul non necessaire -> gain de perf :-)
+            var dt = game.time.currentColor - game.time.start;
 
-        oContext.fillStyle = "grey";
-        oContext.fillRect( 0, 0, this.width, this.height );
-    };
+            switch (sPatternValue) {
+                case "one":
+                    if ( dt > nTimeLapsColor / 2 ) {
+                        console.log("One White");
+                        game.app.buttonOne.draw( "#FFF" );
+                    } else {
+                        console.log("One Black");
+                        game.app.buttonOne.draw( "#000" );
+                    }
 
-    oApp.drawSquareOne = function() {
-        var oContext = this.context;
+                    break;
 
-        oContext.fillStyle = "yellow";
-        oContext.fillRect( 50, 50, this.width / 2 - 75, this.height / 2 - 75 );
+                case "two":
+                    if ( dt > nTimeLapsColor / 2 ) {
+                        console.log("Two White");
+                        game.app.buttonTwo.draw( "#FFF" );
+                    } else  {
+                        console.log("Two Black");
+                        game.app.buttonTwo.draw( "#000" );
+                    }
 
-        // this.addEventListener( 'click', function() {
-        //     console.log( 'clicked' );
-        //     // var oContext = this.context;
-        //     // oContext.fillStyle = "purple";
-        //     // oContext.fillRect( 50, 50, this.width / 2 - 75, this.height / 2 - 75 );
-        // } );
-    };
+                    break;
+                case "three":
+                    if ( dt > nTimeLapsColor / 2 ) {
+                        console.log("Three White");
+                        game.app.buttonThree.draw( "#FFF" );
+                    } else {
+                        console.log("Three Black");
+                        game.app.buttonThree.draw( "#000" );
+                    }
 
-    oApp.drawSquareTwo = function() {
-        var oContext = this.context;
+                    break;
 
-        oContext.fillStyle = "blue";
-        oContext.fillRect( this.width / 2 + 25, 50, this.width / 2 - 75, this.height / 2 - 75 );
-    };
+                case "four":
 
-    oApp.drawSquareThree = function() {
-        var oContext = this.context;
+                    if ( dt > nTimeLapsColor / 2 ) {
+                        console.log("Four White");
+                        game.app.buttonFour.draw( "#FFF" );
+                    } else {
+                        console.log("Four Black");
+                        game.app.buttonFour.draw( "#000" );
+                    }
+                    break;
 
-        oContext.fillStyle = "green";
-        oContext.fillRect( this.width / 2 + 25, this.height / 2 + 25, this.width / 2 - 75, this.height / 2 - 75 );
-    };
+                default:
+                    console.log( "Error in aPattern !" );
+            };
+        }
 
-    oApp.drawSquareFour = function() {
-        var oContext = this.context;
+        // Setup Animation loop
+        this.showPattern = function() {
 
-        oContext.fillStyle = "red";
-        oContext.fillRect( 50, this.height / 2 + 25, this.width / 2 - 75, this.height / 2 - 75 );
-    };
+            game.time.current = Date.now();
 
-    oApp.draw = function() {
-        this.drawBackground();
-        this.drawSquareOne();
-        this.drawSquareTwo();
-        this.drawSquareThree();
-        this.drawSquareFour();
-    };
+            this.animationRequestID = window.requestAnimationFrame( this.showPattern.bind( this ) );
 
-    oApp.setup();
+            // draw: clear all
+            this.app.context.clearRect( 0, 0, this.app.width, this.app.height );
+            // (re)Draw all
+            game.gameSetup();
 
-} )();
+            sPatternValue = aPattern[ timeStep ];
+            game.patternDisplay();
+
+            if ( game.time.current - game.time.start > nTimeLapsArrayPattern ) {
+
+                timeStep++;
+                game.time.start = Date.now();
+
+                // Condition d'arret de l'animation
+                if ( timeStep > aPattern.length - 1 ) {
+                    window.cancelAnimationFrame( this.animationRequestID );
+                    this.animationRequestID = null;
+                    // draw: clear all
+                    this.app.context.clearRect( 0, 0, this.app.width, this.app.height );
+                    // (re)Draw all
+                    game.gameSetup();
+                    //return timeStep; // return ?
+
+                    console.log(aPattern);
+                }
+            }
+
+            //return gameStarted = false; // ? -> return 1 car affectation
+        };
+
+        // Call the right function if the game started or not.
+        if ( !gameStarted ) {
+            game.gameSetup();
+        } else {
+            game.time.start = Date.now();
+            console.log("Already started\nShow me your pattern baby !");
+            game.showPattern();
+        }
+
+    }; // end Function Simon
+
+    window.Simon = Simon;
+
+})();
+
+// ================= use this later ===============

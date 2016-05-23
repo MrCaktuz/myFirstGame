@@ -18,9 +18,10 @@
             timeOut,
             timeStep = 0,
             gameStarted = true,
-            aPattern = [ "one", "three", "two", "four", "one" ],
-            nTimeLapsArrayPattern = 2000,
-            nTimeLapsColor = 1000,
+            aDefaultPattern = [ "one", "three", "two", "four" ],
+            aGamePattern = [ "one", "three", "two", "four" ],
+            nTimeLapsArrayPattern = 500,
+            nTimeLapsColor = 50,
             sPatternValue,
             aMyPattern = [];
 
@@ -158,17 +159,9 @@
 // Setup a random pattern
         this.pattern = {
             "add": function() {
-                var randomNbr = Math.random();
-
-                if ( randomNbr < 0.25 ) {
-                    return aPattern.push("one");
-                } else if ( randomNbr > 0.25 && randomNbr < 0.5 ) {
-                    return aPattern.push("two");
-                } else if ( randomNbr > 0.5 && randomNbr < 0.75 ) {
-                    return aPattern.push("three");
-                } else {
-                    return aPattern.push("four");
-                }
+                // Random pick a integer between 1 and 4
+                var randomNbr = Math.floor((Math.random() * 4) + 1);
+                aGamePattern.push( aDefaultPattern[randomNbr-1] ); // prend la valeur dans le tableau par défaut et l'ajoute au game pattern.
             }
         };
 
@@ -190,53 +183,50 @@
 // Setup the pattern display
         this.patternDisplay = function() {
             game.time.currentColor = Date.now();
+            var timeSpent = game.time.currentColor - game.time.start;
             switch (sPatternValue) {
                 case "one":
-                    if (  game.time.currentColor - game.time.start > nTimeLapsColor ) {
-                        console.log("One White");
-                        // game.app.buttonOne.draw( "#FFF" );
-                    }
-                    if ( game.time.currentColor - game.time.start > nTimeLapsColor ) {
-                        console.log("One Black");
-                        // game.app.buttonOne.draw( "#000" );
+                    if ( timeSpent < nTimeLapsColor / 2 ) {
+                        // console.log("One White");
+                        game.app.buttonOne.draw( "#FFF" );
+                    } else {
+                        // console.log("One Black");
+                        game.app.buttonOne.draw( "#000" );
                     }
 
                     break;
                 case "two":
-                    if (  game.time.currentColor - game.time.start > nTimeLapsColor ) {
-                        console.log("Two White");
-                        // game.app.buttonTwo.draw( "#FFF" );
-                    }
-                    if ( game.time.currentColor - game.time.start > nTimeLapsColor ) {
-                        console.log("Two Black");
-                        // game.app.buttonTwo.draw( "#000" );
+                    if (  timeSpent > nTimeLapsColor / 2 ) {
+                        // console.log("Two White");
+                        game.app.buttonTwo.draw( "#FFF" );
+                    } else {
+                        // console.log("Two Black");
+                        game.app.buttonTwo.draw( "#000" );
                     }
 
                     break;
                 case "three":
-                    if (  game.time.currentColor - game.time.start > nTimeLapsColor ) {
-                        console.log("Three White");
-                        // game.app.buttonThree.draw( "#FFF" );
-                    }
-                    if ( game.time.currentColor - game.time.start > nTimeLapsColor ) {
-                        console.log("Three Black");
-                        // game.app.buttonThree.draw( "#000" );
+                    if (  timeSpent > nTimeLapsColor / 2 ) {
+                        // console.log("Three White");
+                        game.app.buttonThree.draw( "#FFF" );
+                    } else {
+                        // console.log("Three Black");
+                        game.app.buttonThree.draw( "#000" );
                     }
 
                     break;
                 case "four":
-                    if (  game.time.currentColor - game.time.start > nTimeLapsColor ) {
-                        console.log("Four White");
-                        // game.app.buttonFour.draw( "#FFF" );
-                    }
-                    if ( game.time.currentColor - game.time.start > nTimeLapsColor ) {
-                        console.log("Four Black");
-                        // game.app.buttonFour.draw( "#000" );
+                    if (  timeSpent > nTimeLapsColor / 2 ) {
+                        // console.log("Four White");
+                        game.app.buttonFour.draw( "#FFF" );
+                    } else {
+                        // console.log("Four Black");
+                        game.app.buttonFour.draw( "#000" );
                     }
 
                     break;
                 default:
-                    console.log( "Error in aPattern !" );
+                    console.log( "Error in aGamePattern !" );
             };
         }
 
@@ -245,39 +235,38 @@
 
             game.time.current = Date.now();
             this.animationRequestID = window.requestAnimationFrame( this.showPattern.bind( this ) );
-            // console.log( aPattern[ ( new Date() ).getSeconds() % 4  ] );
+            // console.log( aGamePattern[ ( new Date() ).getSeconds() % 4  ] );
 
             // draw: clear
             this.app.context.clearRect( 0, 0, this.app.width, this.app.height );
             // Draw all
             game.gameSetup();
+            sPatternValue = aGamePattern[ timeStep ];
+            game.patternDisplay();
 
             if ( game.time.current - game.time.start > nTimeLapsArrayPattern ) {
-                sPatternValue = aPattern[ timeStep ];
-                console.log( aPattern[ timeStep ] );
                 timeStep++;
+                game.time.start = Date.now();
 
-                game.patternDisplay();
-                console.log( "Current => " + game.time.current );
-                console.log( "Start => " + game.time.start );
-                console.log( "CurrentColor => " + game.time.currentColor );
+                // console.log( aGamePattern[ timeStep ] );
+                // console.log( "Current => " + game.time.current );
+                // console.log( "Start => " + game.time.start );
+                // console.log( "CurrentColor => " + game.time.currentColor );
 
-                if ( timeStep > aPattern.length - 1 ) {
+                if ( timeStep > aGamePattern.length - 1 ) {
                     window.cancelAnimationFrame( this.animationRequestID );
+                    this.animationRequestID = null;
                     // draw: clear
                     this.app.context.clearRect( 0, 0, this.app.width, this.app.height );
                     // Draw all
                     game.gameSetup();
-                    timeStep = 0;
-                    console.log("cleaned!");
+                    //timeStep = 0;
+                    //console.log("cleaned!");
+                    // game.app.gameStarted = false;
                 }
                 // game.patternDisplay();
-                game.time.start = Date.now();
             };
 
-            game.app.gameStarted = false;
-
-            return game.app.gameStarted;
             // console.log( game.time.current );
             // console.log( game.time.start );
 
