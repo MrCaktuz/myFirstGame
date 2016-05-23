@@ -17,7 +17,7 @@
         var game = this,
             timeOut,
             timeStep = 0,
-            gameStarted = true,
+            gameStarted = false,
             aDefaultPattern = [ "one", "three", "two", "four" ],
             aGamePattern = [ "one", "three", "two", "four" ],
             nTimeLapsArrayPattern = 500,
@@ -34,7 +34,10 @@
         };
 
         this.app.getClickPosition = function() {
-            game.app.canvas.addEventListener( "click", game.app.registerMyPattern.bind( this ) );
+            game.app.canvas.addEventListener( "mousedown", game.app.registerMyPattern.bind( this ) );
+            game.app.canvas.addEventListener( "mouseup", function(){
+                game.gameSetup(); // this is what we call a callBack
+            } );
         };
 
         this.app.registerMyPattern = function( oEvent ) {
@@ -46,21 +49,25 @@
 
             if ( this.clickPosition.x > 50 && this.clickPosition.x < 225 && this.clickPosition.y > 50 && this.clickPosition.y < 225 ) {
                 aMyPattern.push( "yellow" );
+                game.app.buttonOne.draw( "#FFF" );
                 // console.log("yellow click !");
 
             } else if ( this.clickPosition.x > 275 && this.clickPosition.x < 450 && this.clickPosition.y > 50 && this.clickPosition.y < 225 ) {
                 aMyPattern.push( "blue" );
+                game.app.buttonTwo.draw( "#FFF" );
                 // console.log("blue click !");
 
             } else if ( this.clickPosition.x > 50 && this.clickPosition.x < 225 && this.clickPosition.y > 275 && this.clickPosition.y < 450 ) {
                 aMyPattern.push( "red" );
+                game.app.buttonFour.draw( "#FFF" );
                 // console.log("red click !");
 
             } else {
                 aMyPattern.push( "green" );
+                game.app.buttonThree.draw( "#FFF" );
                 // console.log("green click !");
             }
-            // console.log(aMyPattern);
+            console.log(aMyPattern);
 
         };
 
@@ -254,7 +261,7 @@
                 // console.log( "CurrentColor => " + game.time.currentColor );
 
                 if ( timeStep > aGamePattern.length - 1 ) {
-                    window.cancelAnimationFrame( this.animationRequestID );
+                    window.cancelAnimationFrame( this.animationRequestID ); // J'arrête l'animation ici.
                     this.animationRequestID = null;
                     // draw: clear
                     this.app.context.clearRect( 0, 0, this.app.width, this.app.height );
@@ -275,6 +282,8 @@
         // Call the right function if the game started or not.
         if ( !gameStarted ) {
             game.gameSetup();
+            game.app.getClickPosition();
+            game.app.registerMyPattern();
         } else {
             game.time.start = Date.now();
             game.showPattern();
