@@ -255,21 +255,29 @@
             if ( game.time.current - game.time.start > nTimeLapsArrayPattern ) {
                 sPatternValue = aPattern[ timeStep ];
                 console.log( aPattern[ timeStep ] );
+                timeStep++;
 
                 game.patternDisplay();
                 console.log( "Current => " + game.time.current );
                 console.log( "Start => " + game.time.start );
                 console.log( "CurrentColor => " + game.time.currentColor );
 
-                if ( timeStep < aPattern.length - 1 ) {
-                    timeStep++;
-                } else {
-                    return timeStep = ;
+                if ( timeStep > aPattern.length - 1 ) {
+                    window.cancelAnimationFrame( this.animationRequestID );
+                    // draw: clear
+                    this.app.context.clearRect( 0, 0, this.app.width, this.app.height );
+                    // Draw all
+                    game.gameSetup();
+                    timeStep = 0;
+                    console.log("cleaned!");
                 }
                 // game.patternDisplay();
                 game.time.start = Date.now();
             };
-            return gameStarted = false;
+
+            game.app.gameStarted = false;
+
+            return game.app.gameStarted;
             // console.log( game.time.current );
             // console.log( game.time.start );
 
