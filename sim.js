@@ -19,7 +19,7 @@
             timeStep = 0,
             gameStarted = false,
             aDefaultPattern = [ "one", "three", "two", "four" ],
-            aGamePattern = [ "one", "three", "two", "four" ],
+            aGamePattern = [ "one", "two", "three", "four" ],
             nTimeLapsArrayPattern = 500,
             nTimeLapsColor = 50,
             sPatternValue,
@@ -36,11 +36,13 @@
         this.app.getClickPosition = function() {
             game.app.canvas.addEventListener( "mousedown", game.app.registerMyPattern.bind( this ) );
             game.app.canvas.addEventListener( "mouseup", function(){
+                game.checkMyPattern();
                 game.gameSetup(); // this is what we call a callBack
             } );
         };
 
-        this.app.registerMyPattern = function( oEvent ) {
+        this.app.registerMyPattern = function( oEvent ) { // ici oEvent = mousedown
+            //console.log(oEvent);
             this.clickPosition = {
                 "x": oEvent.offsetX,
                 "y": oEvent.offsetY
@@ -48,29 +50,39 @@
             // console.log(this.clickPosition);
 
             if ( this.clickPosition.x > 50 && this.clickPosition.x < 225 && this.clickPosition.y > 50 && this.clickPosition.y < 225 ) {
-                aMyPattern.push( "yellow" );
+                aMyPattern.push( "one" );
                 game.app.buttonOne.draw( "#FFF" );
                 // console.log("yellow click !");
 
             } else if ( this.clickPosition.x > 275 && this.clickPosition.x < 450 && this.clickPosition.y > 50 && this.clickPosition.y < 225 ) {
-                aMyPattern.push( "blue" );
+                aMyPattern.push( "two" );
                 game.app.buttonTwo.draw( "#FFF" );
                 // console.log("blue click !");
 
             } else if ( this.clickPosition.x > 50 && this.clickPosition.x < 225 && this.clickPosition.y > 275 && this.clickPosition.y < 450 ) {
-                aMyPattern.push( "red" );
+                aMyPattern.push( "four" );
                 game.app.buttonFour.draw( "#FFF" );
                 // console.log("red click !");
 
             } else {
-                aMyPattern.push( "green" );
+                aMyPattern.push( "three" );
                 game.app.buttonThree.draw( "#FFF" );
                 // console.log("green click !");
             }
-            console.log(aMyPattern);
+            // console.log(aMyPattern);
+            // console.log(aGamePattern);
 
         };
 
+// Check here if aMyPattern is the same than aGamePattern
+        this.checkMyPattern = function() {
+            var nMyPatternLength = aMyPattern.length - 1;
+            if ( !( aGamePattern[ nMyPatternLength ] == aMyPattern[ nMyPatternLength ] ) ) {
+                // stop the game and start over.
+
+                console.log("miss dumb ass!");
+            }
+        }
         // Draw background function
         this.app.bcg = {
             "draw": function() {
@@ -164,7 +176,7 @@
         this.app.buttons = [ this.app.buttonOne, this.app.buttonTwo, this.app.buttonThree, this.app.buttonFour ];
 
 // Setup a random pattern
-        this.pattern = {
+        this.gamePattern = {
             "add": function() {
                 // Random pick a integer between 1 and 4
                 var randomNbr = Math.floor((Math.random() * 4) + 1);
@@ -283,7 +295,6 @@
         if ( !gameStarted ) {
             game.gameSetup();
             game.app.getClickPosition();
-            game.app.registerMyPattern();
         } else {
             game.time.start = Date.now();
             game.showPattern();
