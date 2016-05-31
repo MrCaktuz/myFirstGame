@@ -16,14 +16,18 @@
     Simon = function( oApp ) {
         var game = this,
             timeOut,
-            timeStep = 0,
-            gameStarted = false,
-            aDefaultPattern = [ "one", "two", "three", "four" ],
-            aGamePattern = [ "one", "two", "three", "four" ],
+            gamePatternStart = 3,
+            timeStep         = 0,
+            gameStarted      = false,
+            gameReady        = false,
+            gameStatus       = 0,
+            gameScore        = 0,
+            aDefaultPattern  = [ "Yellow", "Blue", "Green", "Red" ],
+            aGamePattern     = [],
+            aMyPattern       = [],
             nTimeLapsArrayPattern = 500,
-            nTimeLapsColor = 50,
-            sPatternValue,
-            aMyPattern = [];
+            nTimeLapsColor   = 50,
+            sPatternValue;
 
         this.app = oApp;
 
@@ -33,58 +37,81 @@
             "current": null
         };
 
-        this.app.getClickPosition = function() {
-            game.app.canvas.addEventListener( "mousedown", game.app.registerMyPattern.bind( this ) );
-            game.app.canvas.addEventListener( "mouseup", function(){
-                // this is what we call a callBack
-                game.checkMyPattern();
-                game.gameDraw();
-            } );
-        };
+        this.app.setClickListener = function( callback ){
+
+            if( !this.preventSetListener ){
+                this.preventSetListener = 1;
+                game.app.canvas.addEventListener( "mousedown", game.app.registerMyPattern.bind( this ), false );
+                game.app.canvas.addEventListener( "mouseup", function(){
+
+                    game.gameDraw();
+                    game.checkMyPattern();
+
+                    if( gameStatus != 0 ){
+                        game.gameCheck();
+                        return;
+                    }
+                }, false );
+            }
+        }
+
 
         this.app.registerMyPattern = function( oEvent ) { // ici oEvent = mousedown
-            //console.log(oEvent);
+            // console.log(oEvent);
             this.clickPosition = {
                 "x": oEvent.offsetX,
                 "y": oEvent.offsetY
             };
             // console.log(this.clickPosition);
 
-            if ( this.clickPosition.x > 50 && this.clickPosition.x < 225 && this.clickPosition.y > 50 && this.clickPosition.y < 225 ) {
-                aMyPattern.push( "one" );
+            if ( this.clickPosition.x > 15 && this.clickPosition.x < 90 && this.clickPosition.y > 15 && this.clickPosition.y < 90 ) {
+               game.gameInit();
+               console.log("play again !");
+
+           } else if ( this.clickPosition.x > 50 && this.clickPosition.x < 225 && this.clickPosition.y > 50 && this.clickPosition.y < 225 ) {
+                aMyPattern.push( "Yellow" );
                 game.app.buttonOne.draw( "#FFF" );
-                // console.log("yellow click !");
+                console.log("yellow clicked !");
 
             } else if ( this.clickPosition.x > 275 && this.clickPosition.x < 450 && this.clickPosition.y > 50 && this.clickPosition.y < 225 ) {
-                aMyPattern.push( "two" );
+                aMyPattern.push( "Blue" );
                 game.app.buttonTwo.draw( "#FFF" );
-                // console.log("blue click !");
+                console.log("blue clicked !");
 
             } else if ( this.clickPosition.x > 275 && this.clickPosition.x < 450 && this.clickPosition.y > 275 && this.clickPosition.y < 450 ) {
-                aMyPattern.push( "three" );
+                aMyPattern.push( "Green" );
                 game.app.buttonThree.draw( "#FFF" );
-                // console.log("green click !");
+                console.log("green clicked !");
 
-            } else {
-                aMyPattern.push( "four" );
+            } else if ( this.clickPosition.x > 50 && this.clickPosition.x < 225 && this.clickPosition.y > 275 && this.clickPosition.y < 450 ) {
+                aMyPattern.push( "Red" );
                 game.app.buttonFour.draw( "#FFF" );
-                // console.log("red click !");
+                console.log("red clicked !");
+            } else {
+                aMyPattern.push( "Fail" );
+                console.log("Miss clicked !");
             }
-            // console.log(aMyPattern);
-            // console.log(aGamePattern);
+            console.log(aMyPattern);
 
         };
 
-// Check here if aMyPattern is the same than aGamePattern
+        // Check here if aMyPattern is the same than aGamePattern
         this.checkMyPattern = function() {
             var nMyPatternLength = aMyPattern.length - 1;
-            if ( !( aGamePattern[ nMyPatternLength ] == aMyPattern[ nMyPatternLength ] ) ) {
-                // stop the game and start over.
-                window.alert("You failed to succeed !")
-                game.gameInit();
-                //console.log("you failed!");
+
+            if ( aGamePattern[ nMyPatternLength ] != aMyPattern[ nMyPatternLength ] ){
+                aMyPattern = [];
+                gameStatus = -1; // -1 => failed
+            } else if (aGamePattern.length == aMyPattern.length) {
+                aMyPattern = [];
+                gameStatus = 1; // 1 => succeed
+                gameScore ++;
+            } else {
+                gameScore ++;
             }
+            console.log("Your current score is : " + gameScore);
         }
+
         // Draw background function
         this.app.bcg = {
             "draw": function() {
@@ -93,6 +120,18 @@
                 oContext.fillStyle = "#CECECE";
                 oContext.fillRect( 0, 0, game.app.width, game.app.height );
             }
+        };
+
+        // draw the image for the play again button.
+        this.app.drawImage = function() {
+            var oImage = new Image(),
+                oContext = this.context;
+
+            oImage.addEventListener( "load", function() {
+                oContext.drawImage( this, 15, 15 );
+            } );
+
+            oImage.src = "./resources/again.png";
         };
 
         // Draw square one function
@@ -187,10 +226,30 @@
                 oContext.fillText( "Click to start the game Bro !", 110, 260 );
             }
         }
-        this.app.buttons = [ this.app.buttonOne, this.app.buttonTwo, this.app.buttonThree, this.app.buttonFour ];
 
-// Setup a random pattern
+        // Draw game over screen
+        this.app.overScreen = {
+            "draw": function() {
+                var oContext = oApp.context;
+
+                oContext.fillStyle = "rgba( 255, 255, 255, 0.95 )";
+                oContext.fillRect( 0, 0, game.app.width, game.app.height );
+                oContext.fillStyle = "#000";
+                oContext.font = "100 24px Helvetica, Sans-serif";
+                oContext.fillText( "Click the button to play again !", 115, 60 );
+                oContext.font = "100 50px Helvetica, Sans-serif";
+                oContext.fillText( "Game Over!", 120, 230 );
+                oContext.fillText( "Your Score : " + gameScore, 90, 305 );
+            }
+        }
+
+        // Setup a random pattern
         this.gamePattern = {
+            "init": function( patternLength ) {
+                for (var i = 0; i < patternLength; i++) {
+                    game.gamePattern.add();
+                }
+            },
             "add": function() {
                 // Random pick a integer between 1 and 4
                 var randomNbr = Math.floor((Math.random() * 4) + 1);
@@ -198,10 +257,12 @@
             }
         };
 
-// setup the game (draw all)
+        // setup the game (draw all)
         this.gameDraw = function() {
             // draw: background
             game.app.bcg.draw();
+            // draw : replay button
+            game.app.drawImage();
             // draw button one
             game.app.buttonOne.draw( "#000" );
             // draw button two
@@ -213,12 +274,12 @@
 
         }
 
-// Setup the pattern display
+        // Setup the pattern display
         this.patternDisplay = function() {
             game.time.currentColor = Date.now();
             var timeSpent = game.time.currentColor - game.time.start;
             switch (sPatternValue) {
-                case "one":
+                case "Yellow":
                     if ( timeSpent > nTimeLapsColor / 2 ) {
                         // console.log("One White");
                         game.app.buttonOne.draw( "#FFF" );
@@ -228,7 +289,7 @@
                     }
 
                     break;
-                case "two":
+                case "Blue":
                     if (  timeSpent > nTimeLapsColor / 2 ) {
                         // console.log("Two White");
                         game.app.buttonTwo.draw( "#FFF" );
@@ -238,7 +299,7 @@
                     }
 
                     break;
-                case "three":
+                case "Green":
                     if (  timeSpent > nTimeLapsColor / 2 ) {
                         // console.log("Three White");
                         game.app.buttonThree.draw( "#FFF" );
@@ -248,7 +309,7 @@
                     }
 
                     break;
-                case "four":
+                case "Red":
                     if (  timeSpent > nTimeLapsColor / 2 ) {
                         // console.log("Four White");
                         game.app.buttonFour.draw( "#FFF" );
@@ -259,69 +320,73 @@
 
                     break;
                 default:
-                    console.log( "Error in aGamePattern !" );
+                    // console.log( "Error in aGamePattern ! " + sPatternValue);
             };
         }
 
-// Setup Animation loop
-        this.showPattern = function() {
+        // Setup Animation loop
+        this.showPattern = function(callback) {
 
-            game.time.current = Date.now();
             this.animationRequestID = window.requestAnimationFrame( this.showPattern.bind( this ) );
-            // console.log( aGamePattern[ ( new Date() ).getSeconds() % 4  ] );
+            game.time.current = Date.now();
 
-            // draw: clear
-            this.app.context.clearRect( 0, 0, this.app.width, this.app.height );
-            // Draw all
-            game.gameDraw();
+            this.app.context.clearRect( 0, 0, this.app.width, this.app.height ); // draw: clear
+            game.gameDraw(); // Draw all
+
             sPatternValue = aGamePattern[ timeStep ];
             game.patternDisplay();
 
-            if ( game.time.current - game.time.start > nTimeLapsArrayPattern ) {
+            if ( game.time.current - game.time.start > nTimeLapsArrayPattern) {
+
                 timeStep++;
                 game.time.start = Date.now();
 
-                // console.log( aGamePattern[ timeStep ] );
-                // console.log( "Current => " + game.time.current );
-                // console.log( "Start => " + game.time.start );
-                // console.log( "CurrentColor => " + game.time.currentColor );
-
                 if ( timeStep > aGamePattern.length - 1 ) {
-                    window.cancelAnimationFrame( this.animationRequestID ); // J'arrête l'animation ici.
-                    this.animationRequestID = null;
-                    // draw: clear
-                    this.app.context.clearRect( 0, 0, this.app.width, this.app.height );
-                    // Draw all
-                    game.gameDraw();
-                    //timeStep = 0;
-                    //console.log("cleaned!");
-                    // game.app.gameStarted = false;
+                    window.cancelAnimationFrame( this.animationRequestID ); // J'arrête l'animation ici pour pouvoir reproduire le pattern moi meme.
+                    this.app.context.clearRect( 0, 0, this.app.width, this.app.height ); // draw: clear
+                    game.gameDraw(); // Draw all
                 }
-                // game.patternDisplay();
-            };
-
-            // console.log( game.time.current );
-            // console.log( game.time.start );
-
+            }
         };
 
-        // // Call the right function if the game started or not.
-        // if ( !gameStarted ) {
-        //     game.gameDraw();
-        //     game.app.getClickPosition();
-        // } else {
-        //     game.time.start = Date.now();
-        //     game.showPattern();
-        // }
+        this.gamePlay = function() {
 
-        this.gameInit = function() {
-            game.gameDraw();
-            game.app.startScreen.draw();
-            if ( !this.eventsSetted ) {
-                game.app.canvas.addEventListener( "click", function() {
-                    game.gameDraw();
-                } )
+            timeStep = 0;
+            gameStatus = 0
+            // get a starting pattern
+            game.time.start = Date.now();
+            game.showPattern();
+            console.log("Pattern to repeat : " + aGamePattern);
+            // console.log(gameStatus);
+
+        }
+
+        this.gameCheck = function(){
+
+            if(gameStatus == 1){
+                game.gamePattern.add();
+                game.gamePlay();
+            } else {
+                window.cancelAnimationFrame( this.animationRequestID );
+                game.gameOver();
             }
+
+        }
+
+        // over game function
+        this.gameOver = function() {
+            game.app.overScreen.draw();
+            gameStatus = -1;
+            gameScore = 0;
+        }
+
+        // main game function (call all the others)
+        this.gameInit = function() {
+            aGamePattern = [];
+            game.gameDraw();
+            game.gamePattern.init( gamePatternStart );
+            game.app.setClickListener( game.gameCheck() );
+            game.gamePlay();
         };
 
         this.gameInit();
@@ -330,5 +395,3 @@
      window.Simon = Simon;
 
  } )();
-
-// ================= use this later ===============
